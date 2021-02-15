@@ -7,7 +7,10 @@ interface SDSContext {
     nluData: any;
     ttsAgenda: string;
     person: string,
-
+    day: string,
+    time: string,
+    confirm: boolean,
+    option: string,
 }
 
 type SDSEvent =
