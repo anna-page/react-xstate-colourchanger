@@ -1,18 +1,11 @@
 import "./styles.scss";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Machine, assign, send, State, Action } from "xstate";
+import { Machine, assign, send, State } from "xstate";
 import { useMachine, asEffect } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
 import { dmMachine } from "./dmAppointment";
-
-function say(text: string): Action<SDSContext, SDSEvent> {
-    return send((_context: SDSContext) => ({ type: "SPEAK", value: text }))
-}
-
-function listen(): Action<SDSContext, SDSEvent> {
-    return send('LISTEN')
-}
+import { dmMenu } from "./dmInitial";
 
 
 inspect({
@@ -21,73 +14,19 @@ inspect({
 });
 
 import { useSpeechSynthesis, useSpeechRecognition } from 'react-speech-kit';
-import { init } from "xstate/lib/actionTypes";
 
+
+function say(text: string): Action<SDSContext, SDSEvent> {
+    return send((_context: SDSContext) => ({ type: "SPEAK", value: text }))
+}
 
 const machine = Machine<SDSContext, any, SDSEvent>({
     id: 'root',
     type: 'parallel',
-    initial: 'init',
     states: {
-        init: {
-            on: {
-                CLICK: 'welcome'
-            }
+        dm: {
+            ...dmMenu
         },
-        welcome: {
-            initial: "prompt",
-            on: {
-                RECOGNISED: {target: "invoking_rasa"}
-            },
-            states: {
-                prompt: {
-                    entry: say("What do you want to do?"),
-                    on: {ENDSPEECH: "ask"},
-                },
-                ask: {
-                    entry: listen()
-                },
-                nomatch: {
-                    entry: say("Sorry, I didn't catch that"),
-                    on: {ENDSPEECH: "prompt"}
-                },
-            }
-        },
-        appointment:{
-            ...dmMachine
-        },
-        timer: {
-            initial: "prompt",
-            states: {
-                prompt: {entry: say("Okay, let's set a timer")}
-            }
-        },
-        todo_item:{
-            initial: "prompt",
-            states: {
-                prompt: {entry: say("Okay, let's create a new to do item")}
-            }
-        },
-        invoking_rasa: {
-            invoke: {
-                id: 'rasa',
-                src: (context, event) => nluRequest(context.option),
-                onDone: {
-                    //target: 'response',
-                    actions: assign({ intent: (context: SDSContext, event: any)=> event.data})
-                },
-                onError: {
-                    target: 'welcome',
-                } 
-            }
-        },
-        response: {
-            entry: send((context: SDSContext) => ({type: "SPEAK", value: `$(context.option)`})),
-            // on: { ENDSPEECH: 'init'},
-        },
-        // dm: {
-        //     ...dmMachine
-        // },
         asrtts: {
             initial: 'idle',
             states: {
@@ -101,7 +40,7 @@ const machine = Machine<SDSContext, any, SDSEvent>({
                     }
                 },
                 recognising: {
-		    initial: 'progress',
+                    initial: 'progress',
                     entry: 'recStart',
                     exit: 'recStop',
                     on: {
@@ -113,8 +52,8 @@ const machine = Machine<SDSContext, any, SDSEvent>({
                         RECOGNISED: 'idle'
                     },
                     states: {
-		    	progress: {
-			},	    					
+                        progress: {
+                        },	    					
                         match: {
                             entry: send('RECOGNISED'),
                         },
@@ -237,7 +176,7 @@ const rasaurl = 'https://rasa-nlu-heroku.herokuapp.com/model/parse'
 const nluRequest = (text: string) =>
     fetch(new Request(proxyurl + rasaurl, {
         method: 'POST',
-        headers: { 'Origin': 'http://localhost:3000/react-xstate-colourchanger' }, // only required with proxy
+        headers: { 'Origin': 'http://maraev.me' }, // only required with proxy
         body: `{"text": "${text}"}`
     }))
         .then(data => data.json());

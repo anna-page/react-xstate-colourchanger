@@ -10,7 +10,7 @@ interface SDSContext {
     day: string,
     time: string,
     confirm: boolean,
-    option: string,
+    intentResult: string,
 }
 
 type SDSEvent =
@@ -19,4 +19,5 @@ type SDSEvent =
     | { type: 'ASRRESULT', value: string }
     | { type: 'ENDSPEECH' }
     | { type: 'LISTEN' }
-    | { type: 'SPEAK', value: string };
+    | { type: 'SPEAK', value: string }
+    | { type: 'RASA_DONE' };
