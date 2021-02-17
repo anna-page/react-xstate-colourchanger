@@ -11,6 +11,7 @@ interface SDSContext {
     time: string,
     confirm: boolean,
     intentResult: string,
+    cancel: string,
 }
 
 type SDSEvent =

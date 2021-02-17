@@ -1,6 +1,4 @@
 import { MachineConfig, send, Action, assign } from "xstate";
-import { invoke } from "xstate/lib/actionTypes";
-import { dmMachine } from "./dmAppointment";
 
 
 function say(text: string): Action<SDSContext, SDSEvent> {
@@ -36,8 +34,8 @@ const boolgrammar: {[index: string]: {yes?: boolean, no?:boolean}} = {
     "nope": {no: false },
 }
 
-export const dmMenu: MachineConfig<SDSContext, any, SDSEvent> = ({
-    initial: 'init',
+export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
+    initial: 'welcome',
     states: {
         init: {
             on: {
@@ -46,57 +44,10 @@ export const dmMenu: MachineConfig<SDSContext, any, SDSEvent> = ({
         },
         welcome: {
             initial: "prompt",
-            on: { 
-                RECOGNISED: { 
-                    target: 'invoke_rasa',
-                }
-            },
+            on: { ENDSPEECH: "who" },
             states: {
-                prompt: { 
-                    entry: say("What do you want to do?"),
-                    on: { ENDSPEECH: "ask" }
-                },
-                ask: {
-                    entry: listen()
-                },
+                prompt: { entry: say("Let's create an appointment") }
             }
-        },
-        invoke_rasa: {
-            invoke: {
-                id: 'rasa',
-                src: (context, event) => nluRequest(context.recResult),
-                onDone: {
-                    target: 'answer',
-                    actions: [
-                        assign((context, event) => { return { intentResult: event.data.intent.name } }),
-                        // (context:SDSContext, event:any) => console.log('<< Intent: ' + context.intentResult),
-                        send('RASA_DONE')
-                    ],
-                },
-                onError: {
-                    target: 'welcome',
-                    actions: (context,event) => console.log(event.data),
-                },
-            }
-        },
-        answer: {
-            on: { 
-                RASA_DONE: [{
-                    cond: (context: { intentResult: string; }) => "add_todo_item" == context.intentResult,
-                    actions: (context:SDSContext) => console.log('<< TODO: ' + context.intentResult),
-                    target: 'todo',
-                },
-                {
-                    cond: (context: { intentResult: string; }) => "make_appointment" == context.intentResult,
-                    actions: (context:SDSContext) => console.log('<< APP: ' + context.intentResult),
-                    target: 'who',
-                },
-                {
-                    cond: (context: { intentResult: string; }) => "set_timer" == context.intentResult,
-                    actions: (context:SDSContext) => console.log('<< TIMER: ' + context.intentResult),
-                    target: 'timer',
-                }]
-            },
         },
         who: {
             initial: "prompt",
@@ -281,7 +232,7 @@ export const dmMenu: MachineConfig<SDSContext, any, SDSEvent> = ({
         meetingbooked: {
             initial: "prompt",
             on: { 
-                ENDSPEECH: "init" ,
+                ENDSPEECH: "..init" ,
             },
             states: {
                 prompt: {
@@ -292,31 +243,5 @@ export const dmMenu: MachineConfig<SDSContext, any, SDSEvent> = ({
                 },
             }
         },
-        todo: {
-            initial: 'prompt',
-            states: {
-                prompt: { entry: say("Okay, let's create a new to do item.")}
-            },
-            on: { ENDSPEECH: "init" }
-        },
-        timer: {
-            initial: 'prompt',
-            states: {
-                prompt: { entry: say("Okay, let's set a timer.")}
-            },
-            on: { ENDSPEECH: "init" }
-        },
     }
 })
-
-/* RASA API
- *  */
-const proxyurl = "https://cors-anywhere.herokuapp.com/";
-const rasaurl = 'https://rasa-nlu-heroku.herokuapp.com/model/parse'
-const nluRequest = (text: string) =>
-    fetch(new Request(proxyurl + rasaurl, {
-        method: 'POST',
-        // headers: { 'Origin': 'http://maraev.me' }, // only required with proxy
-        body: `{"text": "${text}"}`
-    }))
-        .then(data => data.json());

@@ -4,8 +4,8 @@ import * as ReactDOM from "react-dom";
 import { Machine, assign, send, State } from "xstate";
 import { useMachine, asEffect } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
-import { dmMachine } from "./dmAppointment";
-import { dmMenu } from "./dmInitial";
+// import { dmMachine } from "./dmAppointment-old";
+import { dmMenu } from "./dmAppointment";
 
 
 inspect({
