@@ -12,6 +12,9 @@ interface SDSContext {
     confirm: boolean,
     intentResult: string,
     cancel: string,
+    action: string,
+    object: string,
+    counter: number,
 }
 
 type SDSEvent =
@@ -21,4 +24,6 @@ type SDSEvent =
     | { type: 'ENDSPEECH' }
     | { type: 'LISTEN' }
     | { type: 'SPEAK', value: string }
+    | { type: 'NOINPUT' }
+    | { type: 'MAXSPEECH' }
     | { type: 'RASA_DONE' };

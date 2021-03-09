@@ -1,11 +1,13 @@
 import "./styles.scss";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { Machine, assign, send, State } from "xstate";
+import { Machine, assign, State } from "xstate";
+import { MachineConfig, Action, actions} from "xstate";
+const {send, cancel} = actions
 import { useMachine, asEffect } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
 // import { dmMachine } from "./dmAppointment-old";
-import { dmMenu } from "./dmAppointment";
+import { dmMenu } from "./lab4_dmAppointments";
 
 
 inspect({
@@ -16,10 +18,11 @@ inspect({
 import { useSpeechSynthesis, useSpeechRecognition } from 'react-speech-kit';
 
 
-function say(text: string): Action<SDSContext, SDSEvent> {
-    return send((_context: SDSContext) => ({ type: "SPEAK", value: text }))
-}
+// function say(text: string): Action<SDSContext, SDSEvent> {
+//     return send((_context: SDSContext) => ({ type: "SPEAK", value: text }))
+// }
 
+let count = 0
 const machine = Machine<SDSContext, any, SDSEvent>({
     id: 'root',
     type: 'parallel',
@@ -49,7 +52,26 @@ const machine = Machine<SDSContext, any, SDSEvent>({
                                 assign((_context, event) => { return { recResult: event.value } })],
                             target: '.match'
                         },
-                        RECOGNISED: 'idle'
+                        RECOGNISED: {
+                            target: 'idle',
+                            actions: [
+                                assign((context)=>{
+                                    return {counter: context.counter = 0}
+                                } ),
+                                cancel('maxsp'),
+                            ]
+                            },
+                        MAXSPEECH: {
+                            target: 'idle',
+                            actions: assign((context)=>{
+                                if (context.counter) {
+                                    return {counter: context.counter + 1}
+                                } else {
+                                    return {counter: count + 1}
+                                }
+                            
+                            })
+                    },
                     },
                     states: {
                         progress: {
@@ -176,7 +198,7 @@ const rasaurl = 'https://rasa-nlu-heroku.herokuapp.com/model/parse'
 const nluRequest = (text: string) =>
     fetch(new Request(proxyurl + rasaurl, {
         method: 'POST',
-        headers: { 'Origin': 'http://maraev.me' }, // only required with proxy
+        headers: { 'Origin': 'http://localhost:3000/react-xstate-colourchanger' }, // only required with proxy
         body: `{"text": "${text}"}`
     }))
         .then(data => data.json());
