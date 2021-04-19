@@ -7,7 +7,7 @@ const {send, cancel} = actions
 import { useMachine, asEffect } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
 // import { dmMachine } from "./dmAppointment-old";
-import { dmMenu } from "./lab4_dmAppointments";
+import { dmMenu } from "./VGdmAppointment";
 
 
 inspect({

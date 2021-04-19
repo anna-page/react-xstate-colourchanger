@@ -15,6 +15,7 @@ interface SDSContext {
     action: string,
     object: string,
     counter: number,
+    appointmentData: any
 }
 
 type SDSEvent =
@@ -26,4 +27,6 @@ type SDSEvent =
     | { type: 'SPEAK', value: string }
     | { type: 'NOINPUT' }
     | { type: 'MAXSPEECH' }
-    | { type: 'RASA_DONE' };
+    | { type: 'RASA_DONE' }
+    | { type: 'DATA_STORED' }
+    | { type: 'DIRECT' };
