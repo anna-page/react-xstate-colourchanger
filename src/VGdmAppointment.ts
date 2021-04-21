@@ -199,7 +199,7 @@ export const dmMenu: MachineConfig<SDSContext, any, SDSEvent> = ({
             },
             states: {
                 prompt: {
-                    entry: say("Okay, what are the details of the meeting you want to set up?"),
+                    entry: say("What are the details of the meeting you want to set up?"),
                     on: { ENDSPEECH: "ask" }
                 },
                 ask: {
@@ -215,11 +215,13 @@ export const dmMenu: MachineConfig<SDSContext, any, SDSEvent> = ({
             entry: send('DIRECT'),
             on: {
                 DIRECT: [
+                {cond: (context)  => context.person == undefined  && context.day == undefined && context.time == undefined,
+                target: 'who'},
                 {cond: (context)  => context.person != undefined  && context.day != undefined && context.time != undefined,
                 target: 'confirmtime'},
                 {
                  cond: (context) => context.person != undefined && context.day != undefined,
-                 target: 'allday',
+                 target: 'only_allday_missing',
                 },
                 {
                  cond: (context)  => context.day != undefined && context.time != undefined,
@@ -510,7 +512,44 @@ export const dmMenu: MachineConfig<SDSContext, any, SDSEvent> = ({
                 },
             }
         },
+        only_allday_missing: {
+            initial: "prompt",
+            on: { 
+                RECOGNISED: [{
+                    cond: (context) => "yes" in (boolgrammar[context.recResult] || {}),
+                    actions: assign((context) => { return { confirm: boolgrammar[context.recResult].yes } }),
+                    target: "confirmallday",
 
+                },
+                {
+                    cond: (context) => "no" in (boolgrammar[context.recResult] || {}),
+                    actions: assign((context) => { return { confirm: boolgrammar[context.recResult].no } }),
+                    target: "time",
+                },
+                {
+                    cond: (context) => "cancel" in (grammar[context.recResult] || {}),
+                    actions: assign((context) => { return { cancel: grammar[context.recResult].cancel } }),
+                    target: "init"
+                },
+                { target: ".nomatch" }]
+            },
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `OK. A meeting with ${context.person} on ${context.day}. Is your meeting all day?`
+                    })),
+                    on: { ENDSPEECH: "ask" }
+                },
+                ask: {
+                    entry: listen()
+                },
+                nomatch: {
+                    entry: say("Sorry I didn't catch that"),
+                    on: { ENDSPEECH: "prompt" }
+                },
+            }
+        },
         confirmallday: {
             initial: "prompt",
             on: { 
